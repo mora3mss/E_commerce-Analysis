@@ -1,0 +1,65 @@
+-- exploring data 
+select * from e_commerce_data limit 100;  
+select count(*) from e_commerce_data;
+-- data contains 8 cols and has 541909 rows 
+-- columns meaning 
+-- invoiceNo is the transactionID / OrderID  , StockCode is productID 
+-- InvoiceDate is transaction Date / order date 
+-- Granularity - row is an order line / product inside an order
+-- -------------------------------------------------------------------------------------- 
+-- Data quality checks 
+-- no. 1 Nulls 
+select count(*) as total_rows,
+    sum(InvoiceNo is null) as missing_invoice,
+    sum(StockCode is null) as missing_stockcode,
+    sum(Description is null) as missing_description,
+    sum(Quantity is null) as missing_quantity,
+    sum(InvoiceDate is null) as missing_date,
+    sum(UnitPrice is null) as missing_price,
+    sum(CustomerID is null) as missing_customer,
+    sum(Country is null) as missing_country 
+    from e_commerce_data ;
+    -- there is nulls at description (1454) column and customerID (135080)  column
+    
+    -- no. 2 Duplicates 
+   select count(*) from( select InvoiceNo ,
+    StockCode,
+    Description,
+    Quantity,
+    InvoiceDate,
+    UnitPrice,
+    CustomerID,
+    Country,
+    COUNT(*) AS cnt
+from e_commerce_data
+group by    InvoiceNo,
+    StockCode,
+    Description,
+    Quantity,
+    InvoiceDate,
+    UnitPrice,
+    CustomerID,
+    Country
+having count(*) > 1 )t; 
+-- data contains duplicates (4879) duplictate row 
+
+-- no. 3 invalid values  
+select min(quantity) , max(quantity) from  e_commerce_data; 
+select quantity from e_commerce_data order by quantity desc limit 100; 
+select * from e_commerce_data
+where quantity >=1000 order by quantity desc; -- some products has unit price eqauls to 0 and this is not valid 
+select * from e_commerce_data 
+where unitprice <=0;  --  most of rows that has unitprice equals to 0 has no description and customerID 
+-- testing if i can get description  , price  from another row 
+select * from e_commerce_data where stockcode = 22139; 
+-- yes i can 
+-- invalid quantity cehcks 
+select * from e_commerce_data 
+where quantity <=0; 
+-- most of invalid quantity has C in invocieNo means this is a cancelled order 
+
+-- time range 
+select 
+    min(InvoiceDate) as first_transaction,
+    max(InvoiceDate) as last_transaction
+from e_commerce_data; -- business stopped after one year from first transaction
