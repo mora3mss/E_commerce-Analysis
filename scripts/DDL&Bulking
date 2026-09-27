@@ -1,0 +1,33 @@
+-- DDL for the table
+create table e_commerce_data (
+InvoiceNo varchar(50) , 
+StockCode varchar(50) , 
+Description varchar(100),
+Quantity int , 
+InvoiceDate datetime , 
+UnitPrice float , 
+CustomerID int , 
+Country varchar(50)
+);  
+
+-- bulking data into the table
+LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\DV_assignment1\\data.csv'
+INTO TABLE e_commerce_data
+character set latin1
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS  
+(@InvoiceNo, @StockCode, @Description, @Quantity, @InvoiceDate, @UnitPrice, @CustomerID , @Country)
+SET
+    InvoiceNo = NULLIF(@InvoiceNo, ''),
+    StockCode = NULLIF(@StockCode, ''),
+    Description = NULLIF(@Description, ''),
+    Quantity = NULLIF(@Quantity, ''),
+	InvoiceDate = STR_TO_DATE(NULLIF(@InvoiceDate, ''), '%m/%d/%Y %H:%i'),
+    UnitPrice = NULLIF(@UnitPrice, ''),
+    CustomerID = NULLIF(@CustomerID, ''), 
+    country = nullif(@country ,'')
+    ; 
+    
+    truncate table e_commerce_data; -- making sure table is empty since some errors occured during bulking 
