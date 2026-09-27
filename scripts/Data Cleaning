@@ -1,0 +1,112 @@
+-- creating a table for data cleaning
+CREATE TABLE e_commerce_cleaned_v2 (
+	row_id int auto_increment primary key , 
+    InvoiceNo VARCHAR(20),
+    StockCode VARCHAR(20),
+    Description VARCHAR(255),
+    Quantity INT,
+    InvoiceDate DATETIME,
+    UnitPrice DECIMAL(10,3),
+    CustomerID INT,
+    Country VARCHAR(100),
+    Revenue DECIMAL(12,2),
+    IsCancelled BOOLEAN
+); 
+
+-- handling duplicates
+INSERT INTO e_commerce_cleaned_v2 (
+    InvoiceNo,
+    StockCode,
+    Description,
+    Quantity,
+    InvoiceDate,
+    UnitPrice,
+    CustomerID,
+    Country
+)
+SELECT
+    InvoiceNo,
+    StockCode,
+    Description,
+    Quantity,
+    InvoiceDate,
+    UnitPrice,
+    CustomerID,
+    Country
+FROM (
+    SELECT
+        InvoiceNo,
+        StockCode,
+        Description,
+        Quantity,
+        InvoiceDate,
+        UnitPrice,
+        CustomerID,
+        Country,
+        ROW_NUMBER() OVER (
+            PARTITION BY
+                InvoiceNo,
+                StockCode,
+                Description,
+                Quantity,
+                InvoiceDate,
+                UnitPrice,
+                CustomerID,
+                Country
+            ORDER BY InvoiceNo
+        ) AS rn
+    FROM e_commerce_data
+) t
+WHERE rn = 1;  
+-- deleting rows that has  nulls as description since its only almost 1500 row
+delete  from e_commerce_cleaned_v2 where Description is null or Description = '?'; 
+set sql_safe_updates = 0; 
+
+-- handling invalid data
+select * from e_commerce_cleaned_v2  where quantity <=0; -- 9684 rows 
+ -- if invoiceno has C in it then its a cancelled order - do not delete it  
+ -- if quantity is negative and price = 0 and order is not cancelled then delete data 
+ delete from e_commerce_cleaned_v2 where InvoiceNo not like '%C%' and UnitPrice = 0 and quantity<=0 ; 
+ 
+ 
+ -- cleaning price col 
+ select count(*) from e_commerce_cleaned_v2 where unitprice=0; -- 576 rows that has no price - recommend to delete them 
+ delete  from e_commerce_cleaned_v2 where unitprice = 0;  
+ 
+ -- inserting revenue and is cancelled cols. 
+ UPDATE e_commerce_cleaned_v2
+SET
+    Revenue = CASE
+        WHEN InvoiceNo LIKE '%C%' THEN 0
+        ELSE Quantity * UnitPrice
+    END,
+    IsCancelled = CASE
+        WHEN InvoiceNo LIKE '%C%' THEN True
+        ELSE False
+    END; 
+    select *from e_commerce_cleaned_v2 where Revenue = 0;
+-- no need for negative quantity anymore  we got a column to detect if this is a cancelled order or not  
+-- also you can detect it from invoiceno column
+ update e_commerce_cleaned_v2 
+ set 
+ quantity = abs(quantity);  
+ -- -------------------------------
+ -- some quality checks to make sure
+select * from e_commerce_cleaned_v2 where quantity <=0; 
+-- done 
+select * from e_commerce_cleaned_v2 where unitprice =0; 
+-- done 
+select * from e_commerce_cleaned_v2 where Revenue is null or IsCancelled is null; 
+-- done
+
+-- data is cleaned
+ 
+
+
+ 
+ 
+
+
+
+
+
