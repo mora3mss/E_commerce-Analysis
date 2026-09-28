@@ -98,7 +98,9 @@ select * from e_commerce_cleaned_v2 where unitprice =0;
 -- done 
 select * from e_commerce_cleaned_v2 where Revenue is null or IsCancelled is null; 
 -- done
-
+-- replacing null values 
+update e_commerce_cleaned_v2 
+set customerid = coalesce(customerid , 'N/A')
 -- data is cleaned
  
 
